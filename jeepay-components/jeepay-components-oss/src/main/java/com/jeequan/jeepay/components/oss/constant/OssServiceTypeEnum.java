@@ -28,8 +28,9 @@ public enum OssServiceTypeEnum {
 
     LOCAL("local"), //本地存储
 
-    ALIYUN_OSS("aliyun-oss");  //阿里云oss
+    ALIYUN_OSS("aliyun-oss"),  //阿里云oss
 
+    ASW_S3("aws-s3"); //AWS S3
     /** 名称 **/
     private String serviceName;
 

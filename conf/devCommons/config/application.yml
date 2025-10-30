@@ -112,7 +112,14 @@ isys:
 
     # [local]: 本地存储，所有的文件将存在放本地，可通过nfs, rsync工具实现多机共享；
     # [aliyun-oss]: 将文件统一上传到阿里云oss服务器;  注意：需调整jeepay-components-oss/pom.xml中的aliyun-sdk-oss组件依赖方式
-    service-type: local
+    # [aws-s3]: 将文件传入对应的S3文件服务
+    service-type: aws-s3
+
+    aws-s3:
+      endpoint: 10.1.5.32:9000
+      access-key: bPew1s3guZXFmovGDCcB
+      secret-key: 7uYOrDCcRzT5BgoQaE3MfyXiweqS9IAN62WdjnLK
+      bucket-name: jeepay
 
     # 阿里云OSS服务配置信息
     aliyun-oss:
