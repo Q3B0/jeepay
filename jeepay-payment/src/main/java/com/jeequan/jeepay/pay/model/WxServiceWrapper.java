@@ -17,7 +17,9 @@ package com.jeequan.jeepay.pay.model;
 
 import com.github.binarywang.wxpay.config.WxPayConfig;
 import com.github.binarywang.wxpay.constant.WxPayConstants;
+import com.github.binarywang.wxpay.service.PayScoreService;
 import com.github.binarywang.wxpay.service.WxPayService;
+import com.github.binarywang.wxpay.service.impl.PayScoreServiceImpl;
 import com.github.binarywang.wxpay.service.impl.WxPayServiceImpl;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.model.params.wxpay.WxpayIsvParams;
@@ -51,6 +53,8 @@ public class WxServiceWrapper {
     /** 缓存 wxJavaService 对象 **/
     private WxMpService wxMpService;
 
+    /** 缓存 payScoreService 对象 **/
+    private PayScoreService payScoreService;
 
     public static WxServiceWrapper buildWxServiceWrapper(String mchId, String appId, String appSecret, String mchKey, String apiVersion, String apiV3Key,
                                                    String serialNo, String cert, String apiClientCert, String apiClientKey,
@@ -100,7 +104,9 @@ public class WxServiceWrapper {
         WxMpService wxMpService = new WxMpServiceImpl();
         wxMpService.setWxMpConfigStorage(wxMpConfigStorage); //微信配置信息
 
-        return new WxServiceWrapper(apiVersion, wxPayService, wxMpService);
+        PayScoreService payScoreService = new PayScoreServiceImpl(wxPayService);
+
+        return new WxServiceWrapper(apiVersion, wxPayService, wxMpService, payScoreService);
     }
 
 
