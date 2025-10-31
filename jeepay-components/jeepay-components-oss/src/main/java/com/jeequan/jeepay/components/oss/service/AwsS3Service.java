@@ -21,12 +21,13 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
 
 @Service
 @Slf4j
-@ConditionalOnProperty(name = "isys.oss.service-type", havingValue = "asw-s3")
+@ConditionalOnProperty(name = "isys.oss.service-type", havingValue = "aws-s3")
 public class AwsS3Service implements IOssService {
 
     @Autowired
@@ -37,7 +38,7 @@ public class AwsS3Service implements IOssService {
 
     @PostConstruct
     public void init(){
-        s3Client = S3Client.builder().endpointOverride(URI.create(awsS3YmlConfig.getEndpoint()))
+        s3Client = S3Client.builder().endpointOverride(URI.create("http://" + awsS3YmlConfig.getEndpoint()))
                 .region(Region.US_EAST_1)
                 .credentialsProvider(
                     StaticCredentialsProvider.create(AwsBasicCredentials.create(awsS3YmlConfig.getAccessKey(), awsS3YmlConfig.getSecretKey())))
@@ -50,8 +51,18 @@ public class AwsS3Service implements IOssService {
             if(!bucketExists(awsS3YmlConfig.getBucketName())){
                 createBucket(awsS3YmlConfig.getBucketName());
             }
-            s3Client.putObject(PutObjectRequest.builder().bucket(awsS3YmlConfig.getBucketName()).key(saveDirAndFileName).contentType(multipartFile.getContentType()).build(),
-                    RequestBody.fromInputStream(multipartFile.getInputStream(), multipartFile.getSize()));
+            // 读取 MultipartFile 到字节数组
+            byte[] fileBytes = multipartFile.getBytes(); // 这个方法会将流内容读取到内存中的字节数组
+            // 创建 ByteArrayInputStream
+            InputStream inputStream = new ByteArrayInputStream(fileBytes);
+            // 使用 RequestBody.fromInputStream 时，确保流可以被多次读取，或者使用 fromBytes
+            // 推荐使用 fromBytes 以避免流相关问题
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(awsS3YmlConfig.getBucketName())
+                    .key(saveDirAndFileName)
+                    .contentType(multipartFile.getContentType())
+                    .build();
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(fileBytes));
             return saveDirAndFileName;
         } catch (Exception e) {
             log.error("error", e);
