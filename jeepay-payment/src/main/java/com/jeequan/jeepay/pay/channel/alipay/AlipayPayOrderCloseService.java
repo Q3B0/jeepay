@@ -15,8 +15,11 @@
  */
 package com.jeequan.jeepay.pay.channel.alipay;
 
+import com.alipay.api.domain.AlipayFundAuthOperationCancelModel;
 import com.alipay.api.domain.AlipayTradeCloseModel;
+import com.alipay.api.request.AlipayFundAuthOperationCancelRequest;
 import com.alipay.api.request.AlipayTradeCloseRequest;
+import com.alipay.api.response.AlipayFundAuthOperationCancelResponse;
 import com.alipay.api.response.AlipayTradeCloseResponse;
 import com.jeequan.jeepay.core.constants.CS;
 import com.jeequan.jeepay.core.entity.PayOrder;
@@ -47,24 +50,46 @@ public class AlipayPayOrderCloseService implements IPayOrderCloseService {
     @Override
     public ChannelRetMsg close(PayOrder payOrder, MchAppConfigContext mchAppConfigContext){
 
-        AlipayTradeCloseRequest req = new AlipayTradeCloseRequest();
+        if(payOrder.getWayCode().equals(CS.PAY_WAY_CODE.ALI_FREEZE)){
+            //todo 新增解除预授权，未测试
+            AlipayFundAuthOperationCancelRequest req = new AlipayFundAuthOperationCancelRequest();
+            AlipayFundAuthOperationCancelModel model = new AlipayFundAuthOperationCancelModel();
 
-        // 商户订单号，商户网站订单系统中唯一订单号，必填
-        AlipayTradeCloseModel model = new AlipayTradeCloseModel();
-        model.setOutTradeNo(payOrder.getPayOrderId());
-        req.setBizModel(model);
+            model.setOutRequestNo(payOrder.getPayOrderId());
+            model.setRemark("预授权撤销");
+            model.setAuthNo(payOrder.getChannelOrderNo());
+            req.setBizModel(model);
+            //通用字段
+            AlipayKit.putApiIsvInfo(mchAppConfigContext, req, model);
 
-        //通用字段
-        AlipayKit.putApiIsvInfo(mchAppConfigContext, req, model);
+            AlipayFundAuthOperationCancelResponse resp = configContextQueryService.getAlipayClientWrapper(mchAppConfigContext).execute(req);
+            // 返回状态成功
+            if (resp.isSuccess()) {
+                return ChannelRetMsg.confirmSuccess(resp.getOutOrderNo());
+            }else {
+                return ChannelRetMsg.sysError(resp.getSubMsg());
+            }
+        }else{
+            AlipayTradeCloseRequest req = new AlipayTradeCloseRequest();
 
-        AlipayTradeCloseResponse resp = configContextQueryService.getAlipayClientWrapper(mchAppConfigContext).execute(req);
+            // 商户订单号，商户网站订单系统中唯一订单号，必填
+            AlipayTradeCloseModel model = new AlipayTradeCloseModel();
+            model.setOutTradeNo(payOrder.getPayOrderId());
+            req.setBizModel(model);
 
-        // 返回状态成功
-        if (resp.isSuccess()) {
-            return ChannelRetMsg.confirmSuccess(resp.getTradeNo());
-        }else {
-            return ChannelRetMsg.sysError(resp.getSubMsg());
+            //通用字段
+            AlipayKit.putApiIsvInfo(mchAppConfigContext, req, model);
+
+            AlipayTradeCloseResponse resp = configContextQueryService.getAlipayClientWrapper(mchAppConfigContext).execute(req);
+
+            // 返回状态成功
+            if (resp.isSuccess()) {
+                return ChannelRetMsg.confirmSuccess(resp.getTradeNo());
+            }else {
+                return ChannelRetMsg.sysError(resp.getSubMsg());
+            }
         }
+
     }
 
 

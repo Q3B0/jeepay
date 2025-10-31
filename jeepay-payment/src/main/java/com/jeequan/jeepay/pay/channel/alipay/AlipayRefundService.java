@@ -15,10 +15,14 @@
  */
 package com.jeequan.jeepay.pay.channel.alipay;
 
+import com.alipay.api.AlipayResponse;
+import com.alipay.api.domain.AlipayFundAuthOrderUnfreezeModel;
 import com.alipay.api.domain.AlipayTradeFastpayRefundQueryModel;
 import com.alipay.api.domain.AlipayTradeRefundModel;
+import com.alipay.api.request.AlipayFundAuthOrderUnfreezeRequest;
 import com.alipay.api.request.AlipayTradeFastpayRefundQueryRequest;
 import com.alipay.api.request.AlipayTradeRefundRequest;
+import com.alipay.api.response.AlipayFundAuthOrderUnfreezeResponse;
 import com.alipay.api.response.AlipayTradeFastpayRefundQueryResponse;
 import com.alipay.api.response.AlipayTradeRefundResponse;
 import com.jeequan.jeepay.core.constants.CS;
@@ -53,34 +57,39 @@ public class AlipayRefundService extends AbstractRefundService {
 
     @Override
     public ChannelRetMsg refund(RefundOrderRQ bizRQ, RefundOrder refundOrder, PayOrder payOrder, MchAppConfigContext mchAppConfigContext) throws Exception {
+        if(payOrder.getWayCode().equals(CS.PAY_WAY_CODE.ALI_FREEZE)){
+            //todo 新增预授权解冻，未测试
+            AlipayFundAuthOrderUnfreezeRequest request = new AlipayFundAuthOrderUnfreezeRequest();
+            AlipayFundAuthOrderUnfreezeModel model = new AlipayFundAuthOrderUnfreezeModel();
+            model.setAuthNo(refundOrder.getChannelPayOrderNo());
+            model.setOutRequestNo(refundOrder.getRefundOrderId());
+            model.setAmount(AmountUtil.convertCent2Dollar(refundOrder.getRefundAmount().toString()));
+            model.setRemark(refundOrder.getRefundReason());
+            request.setBizModel(model);
+            //统一放置 isv接口必传信息
+            AlipayKit.putApiIsvInfo(mchAppConfigContext, request, model);
+            AlipayFundAuthOrderUnfreezeResponse response = configContextQueryService.getAlipayClientWrapper(mchAppConfigContext).execute(request);
 
-        AlipayTradeRefundRequest request = new AlipayTradeRefundRequest();
-        AlipayTradeRefundModel model = new AlipayTradeRefundModel();
-        model.setOutTradeNo(refundOrder.getPayOrderId());
-        model.setTradeNo(refundOrder.getChannelPayOrderNo());
-        model.setOutRequestNo(refundOrder.getRefundOrderId());
-        model.setRefundAmount(AmountUtil.convertCent2Dollar(refundOrder.getRefundAmount().toString()));
-        model.setRefundReason(refundOrder.getRefundReason());
-        request.setBizModel(model);
+            return buildRetMsg(response);
 
-        //统一放置 isv接口必传信息
-        AlipayKit.putApiIsvInfo(mchAppConfigContext, request, model);
-
-        AlipayTradeRefundResponse response = configContextQueryService.getAlipayClientWrapper(mchAppConfigContext).execute(request);
-
-        ChannelRetMsg channelRetMsg = new ChannelRetMsg();
-        channelRetMsg.setChannelAttach(response.getBody());
-
-        // 调用成功
-        if(response.isSuccess()){
-            channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_SUCCESS);
         }else{
+            AlipayTradeRefundRequest request = new AlipayTradeRefundRequest();
+            AlipayTradeRefundModel model = new AlipayTradeRefundModel();
+            model.setOutTradeNo(refundOrder.getPayOrderId());
+            model.setTradeNo(refundOrder.getChannelPayOrderNo());
+            model.setOutRequestNo(refundOrder.getRefundOrderId());
+            model.setRefundAmount(AmountUtil.convertCent2Dollar(refundOrder.getRefundAmount().toString()));
+            model.setRefundReason(refundOrder.getRefundReason());
+            request.setBizModel(model);
 
-            channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_FAIL);
-            channelRetMsg.setChannelErrCode(response.getSubCode());
-            channelRetMsg.setChannelErrMsg(response.getSubMsg());
+            //统一放置 isv接口必传信息
+            AlipayKit.putApiIsvInfo(mchAppConfigContext, request, model);
+
+            AlipayTradeRefundResponse response = configContextQueryService.getAlipayClientWrapper(mchAppConfigContext).execute(request);
+
+            return buildRetMsg(response);
+
         }
-        return channelRetMsg;
     }
 
     @Override
@@ -114,5 +123,20 @@ public class AlipayRefundService extends AbstractRefundService {
         return channelRetMsg;
     }
 
+    private ChannelRetMsg buildRetMsg(AlipayResponse response){
+        ChannelRetMsg channelRetMsg = new ChannelRetMsg();
+        channelRetMsg.setChannelAttach(response.getBody());
+
+        // 调用成功
+        if(response.isSuccess()){
+            channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_SUCCESS);
+        }else{
+
+            channelRetMsg.setChannelState(ChannelRetMsg.ChannelState.CONFIRM_FAIL);
+            channelRetMsg.setChannelErrCode(response.getSubCode());
+            channelRetMsg.setChannelErrMsg(response.getSubMsg());
+        }
+        return channelRetMsg;
+    }
 
 }

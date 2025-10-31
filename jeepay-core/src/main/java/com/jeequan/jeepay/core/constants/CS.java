@@ -166,7 +166,7 @@ public class CS {
         String ALI_WAP = "ALI_WAP";  //支付宝 wap支付
         String ALI_QR = "ALI_QR";  //支付宝 二维码付款
         String ALI_OC = "ALI_OC";  //支付宝 订单码支付
-
+        String ALI_FREEZE = "ALI_FREEZE"; //支付宝 预授权冻结
         String YSF_BAR = "YSF_BAR";  //云闪付条码支付
         String YSF_JSAPI = "YSF_JSAPI";  //云闪付服务窗支付
 

@@ -94,6 +94,10 @@ public class UnifiedOrderRQ extends AbstractMchAppRQ {
             AliBarOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), AliBarOrderRQ.class);
             BeanUtils.copyProperties(this, bizRQ);
             return bizRQ;
+        }else if(CS.PAY_WAY_CODE.ALI_FREEZE.equals(wayCode)){
+            AliFreezeOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), AliFreezeOrderRQ.class);
+            BeanUtils.copyProperties(this, bizRQ);
+            return bizRQ;
         }else if(CS.PAY_WAY_CODE.ALI_JSAPI.equals(wayCode)){
             AliJsapiOrderRQ bizRQ = JSONObject.parseObject(StringUtils.defaultIfEmpty(this.channelExtra, "{}"), AliJsapiOrderRQ.class);
             BeanUtils.copyProperties(this, bizRQ);
